@@ -1,0 +1,8 @@
+# Dont want that folder cluttering committs up
+.idea
+__pycache__
+# You want your own compiled files
+*.pyc
+# No temp files
+*.tmp
+*.log
