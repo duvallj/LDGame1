@@ -73,6 +73,8 @@ class Mover(BaseObject):
         self.yv *= self.ydccl
         for dire in self.mdirs:
             self.move_dir(dire)
+        self.xv += self.xgrav
+        self.yv += self.ygrav
         self.apply_velocity()
         super(Mover, self).tick()
 
@@ -122,7 +124,7 @@ class MoveRotate(Mover, Rotator):
         super(MoveRotate, self).__init__(*args, **kwargs)
 
     def move_dir(self, dire):
-        dire = dire + self.angle
+        dire = dire - self.angle
         self.xv += cos(dire*pi/180) * self.xaccl
         self.yv -= sin(dire*pi/180) * self.yaccl
 
@@ -132,13 +134,13 @@ class MoveRotate(Mover, Rotator):
 class ContainerObject(Mover):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.children = set()
+        self.children = []
 
     def add(self, obj):
-        self.children.add(obj)
+        self.children.append(obj)
 
     def remove(self, obj):
-        self.children.discard(obj)
+        self.children.remove(obj)
 
     def draw(self, screen, transform):
         def new_transform(point):
@@ -149,6 +151,7 @@ class ContainerObject(Mover):
     def tick(self):
         for child in self.children:
             child.tick()
+        super(ContainerObject, self).tick()
 
     def collides(self, other):
         if issubclass(other, ContainerObject):

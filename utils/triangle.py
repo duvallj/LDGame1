@@ -14,7 +14,8 @@ class Triangle(MoveRotate):
     def draw(self, screen, transform):
         def nt(point):
             return transform(self.to_nonlocal(point))
-        pygame.draw.polygon(screen, self.color, [nt(p) for p in self.vs])
+        lst = [nt(p) for p in self.vs]
+        pygame.draw.polygon(screen, self.color, lst)
 
     def tick(self):
         super(Triangle, self).tick()

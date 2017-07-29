@@ -17,9 +17,10 @@ def main():
     ih.bind_key(pygame.K_LEFT, cam.start_move_dir(180), cam.stop_move_dir(180))
     ih.bind_key(pygame.K_RIGHT, cam.start_move_dir(0), cam.stop_move_dir(0))
 
-    gt = Triangle((0,0),(200,200),(100,300),2000,100,color=GREEN)
+    gt = Triangle((0,0),(200,-100),(200,100),2000,100,color=GREEN)
     ih.bind_key(pygame.K_q, gt.start_counterclock, gt.stop_counterclock)
     ih.bind_key(pygame.K_e, gt.start_clockwise, gt.stop_clockwise)
+    ih.bind_key(pygame.K_w, gt.start_move_dir(0), gt.stop_move_dir(0))
 
     scene.add(ColorBackground(BLACK))
     scene.add(Triangle((0,0),(500,500),(0,500),500,0,color=WHITE))

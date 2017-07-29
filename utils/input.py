@@ -14,6 +14,7 @@ class InputHandler:
         self.mdown = []
         self.mup = []
         self.mmove = []
+        self.stop = []
 
     def bind_key(self, key, down_action=None, up_action=None):
         if down_action is not None:
@@ -28,6 +29,10 @@ class InputHandler:
             self.mup.append(up_action)
         if move_action is not None:
             self.mmove.append(move_action)
+
+    def bind_stop(self, action=None):
+        if action is not None:
+            self.stop.append(action)
 
     def tick(self, evtlist):
         for evt in evtlist:
@@ -48,3 +53,6 @@ class InputHandler:
             elif evt.type == pygame.MOUSEMOTION:
                 for func in self.mmove:
                     func(evt.pos, evt.rel, evt.buttons)
+            elif evt.type == pygame.QUIT:
+                for func in self.stop:
+                    func()
