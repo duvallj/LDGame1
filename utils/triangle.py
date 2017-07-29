@@ -1,5 +1,6 @@
 from utils.objects import *
 import pygame
+import pygame.gfxdraw
 
 
 class Triangle(MoveRotate):
@@ -15,7 +16,7 @@ class Triangle(MoveRotate):
         def nt(point):
             return transform(self.to_nonlocal(point))
         lst = [nt(p) for p in self.vs]
-        pygame.draw.polygon(screen, self.color, lst)
+        pygame.gfxdraw.filled_polygon(screen, lst, self.color)
 
     def tick(self):
         super(Triangle, self).tick()
@@ -58,9 +59,11 @@ class Triangle(MoveRotate):
 
 
 class ColorBackground(BaseObject):
-    def __init__(self, color):
+    def __init__(self, color, width, height):
         super().__init__(0, 0)
         self.color = color
+        self.w = width
+        self.h = height
 
     def draw(self, screen, transform):
         screen.fill(self.color)

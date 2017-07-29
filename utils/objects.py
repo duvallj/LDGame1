@@ -27,6 +27,9 @@ class BaseObject:
     def collides(self, other):
         return False
 
+    def off_screen(self):
+        return False
+
 
 class Mover(BaseObject):
     def __init__(self, *args, **kwargs):

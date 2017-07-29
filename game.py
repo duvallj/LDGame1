@@ -5,6 +5,8 @@ from utils.color import *
 from utils.camera import *
 from utils.input import *
 from math import atan2, pi
+import pygame.image
+import random
 
 '''
 Idea:
@@ -32,6 +34,9 @@ class PaperPlane(ContainerObject, MoveRotate):
         # realistic to change direction really.
         # Although, still need to make sure being straight up is not a strat
         # plane should still be able to fall backwards
+
+
+
         pass
 
 class Ground(ContainerObject):
@@ -41,12 +46,23 @@ class Ground(ContainerObject):
         self.add(Triangle((0,0),(1920,0),(1920,-200),color=(0,140,14)))
 
 class ImageThing(BaseObject):
-    def __init__(self, image, *args, **kwargs):
+    def __init__(self, image, cam, *args, **kwargs):
         super(ImageThing, self).__init__(*args, **kwargs)
-        self.image = image
+        self.cam = cam
+        self.image = pygame.image.load(image).convert_alpha()
+        self.w, self.h = self.image.get_size()
 
     def draw(self, screen, transform):
-        screen.blit(self.image, transform((self.x, self.y)))
+        if not self.off_screen():
+            screen.blit(self.image, transform((self.x, self.y)))
+
+    def off_screen(self):
+        return (self.x > self.cam.x + self.cam.w or self.cam.x > self.x + self.w or
+                self.y > self.cam.y + self.cam.h or self.cam.y > self.y + self.h)
+
+    def off_area(self):
+        return self.x > self.cam.x + self.cam.w or self.cam.x > self.x + self.w
+
 
 class Game:
     def __init__(self, screen):
@@ -70,16 +86,33 @@ class Game:
 
     def draw(self):
         self.cam.draw(self.screen)
-        pygame.display.flip()
+        #pygame.display.flip()
 
+
+def update_bgitems(g, iset, fname, mi, isp, xo, yo, yro):
+    irem = set()
+    for grs in iset:
+        if grs.off_area():
+            irem.add(grs)
+            g.scene.remove(grs)
+    iset.difference_update(irem)
+    if len(iset) == 0 or (len(iset) < mi and random.random() < isp):
+        grs = ImageThing(fname, g.cam,
+                         x=g.cam.x + g.cam.w + xo,
+                         y=yo + random.randint(-yro, yro))
+        iset.add(grs)
+        g.scene.add(grs)
 
 def main():
     pygame.init()
-    screen = pygame.display.set_mode((640,480))#, pygame.FULLSCREEN | pygame.DOUBLEBUF | pygame.HWSURFACE)
+    screen = pygame.display.set_mode((960,540), pygame.HWSURFACE | pygame.DOUBLEBUF)
     g = Game(screen)
-    pl = PaperPlane(x=100, y=780, raccl=0.01, maxrv=0.5, rdccl=0.994, ygrav=0.1)
+    pl = PaperPlane(x=100, y=780,
+                    raccl=0.01, maxrv=0.5, rdccl=0.994,
+                    maxv=30, xaccl=3, yaccl=3,
+                    ygrav=0.1)
     gr = Ground(y=1080)
-    bg = ColorBackground((45,244,255))
+    bg = ColorBackground((45, 244, 255), 960, 540)
     g.scene.add(bg)
     g.scene.add(gr)
     g.scene.add(pl)
@@ -89,8 +122,21 @@ def main():
     ys = 0
     ye = -5000
 
-    clouds = {}
-    grass = {}
+    cloud1s = set()
+    max_cloud1s = 5
+    c1spawn = 0.0005
+
+    cloud2s = set()
+    max_cloud2s = 6
+    c2spawn = 0.0006
+
+    stars = set()
+    max_stars = 100
+    sspawn = 0.007
+
+    grass = set()
+    max_grass = 10
+    gspawn = 0.002
 
     g.ih.bind_key(pygame.K_a, pl.start_counterclock, pl.stop_counterclock)
     g.ih.bind_key(pygame.K_d, pl.start_clockwise, pl.stop_clockwise)
@@ -103,20 +149,31 @@ def main():
     pl.start_move_dir(0)()
 
     while g.going:
+        update_bgitems(g, grass, 'imgs/grass.png', max_grass, gspawn, -25, 865, 20)
+        for x in range(400, 2000, 200):
+            update_bgitems(g, cloud1s, 'imgs/cloud1.png', max_cloud1s, c1spawn, -25, -x, 100)
+        for x in range(2000, 5000, 400):
+            update_bgitems(g, cloud2s, 'imgs/cloud2.png', max_cloud2s, c2spawn, -25, -x, 200)
+        for x in range(5000, 8000, 400):
+            update_bgitems(g, stars, 'imgs/star.png', max_stars, sspawn, -25, -x, 200)
         pc = g.cam.to_nonlocal((tx, ty))
         pp = g.scene.to_nonlocal((pl.x, pl.y))
-        angle = atan2(pc[1]-pp[1], pp[0]-pc[0])
-        g.cam.move_dir(angle*180/pi)
+        g.cam.x += (pp[0]-pc[0])/100
+        g.cam.y += (pp[1]-pc[1])/100
+
         oa = pl.angle
         oy = pl.y
+
         g.tick()
         if g.cam.y > 0:
             g.cam.y = 0
         gr.x = g.cam.x
+
         pl.angle *= pl.rdccl
         na = pl.angle
         ny = pl.y
         pl.calc_speed(ny-oy, na-oa)
+
         color = tuple([
             (max(g.cam.y, ye) - ys) * (bge[i] - bgs[i]) / (ye - ys) + bgs[i]
             for i in range(3)

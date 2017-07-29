@@ -10,6 +10,8 @@ class Camera(Mover):
         self.w = kwargs.get('w',1920)
         self.h = kwargs.get('h',1080)
         self.ww, self.wh = screen.get_size()
+        self.ox = self.x+2
+        self.oy = self.y+2
 
     def transform(self, point):
         return ((point[0]-self.x) * self.ww / self.w,
