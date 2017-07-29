@@ -24,7 +24,7 @@ class BaseObject:
         self.x += x
         self.y += y
 
-    def collides(self, other):
+    def collides(self, other, my_transform, other_transform):
         return False
 
     def off_screen(self):
@@ -156,15 +156,20 @@ class ContainerObject(Mover):
             child.tick()
         super(ContainerObject, self).tick()
 
-    def collides(self, other):
-        if issubclass(other, ContainerObject):
+    def collides(self, other, my_transform, other_transform):
+        def new_mt(point):
+            return my_transform(self.to_nonlocal(point))
+        def new_ot(point):
+            return other_transform(other.to_nonlocal(point))
+        if issubclass(ContainerObject, other.__class__):
             for c1, c2 in product(self.children, other.children):
-                if c1.collides(c2):
+                if c1.collides(c2, new_ot, new_mt):
                     return True
             return False
         else:
             for c in self.children:
-                if c.collides(other) or other.collides(c):
+                if c.collides(other, new_ot, new_mt) or \
+                        other.collides(c, new_ot, new_mt):
                     return True
             return False
 

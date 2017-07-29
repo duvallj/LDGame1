@@ -13,6 +13,7 @@ Idea:
 You are a paper airplane
 You fly along, slowly running out of power as you do
 Going down fast gets you more speed, going up decreases it
+TODO:
 Updrafts push you up
 Tail winds give you a boost of speed
 Head winds decrease your speed even faster
@@ -25,7 +26,21 @@ class PaperPlane(ContainerObject, MoveRotate):
         self.add(Triangle((-20,0),(-30,-15),(60,0),color=(255,245,145)))
         self.add(Triangle((-20,0),(-20,20),(60,0),color=(255,249,183)))
 
-    def calc_speed(self, cy, ca):
+        self.xgrav = 0
+        self.ygrav = 0.005
+        self.mom = 0.01
+
+    def move_dir(self, dire):
+        dire = dire - self.angle
+        self.xv += cos(dire*pi/180) * self.xaccl
+        self.yv -= sin(dire*pi/180) * self.yaccl
+
+    def move_dir_force(self, dire, force):
+        dire = dire - self.angle
+        self.xv += cos(dire * pi / 180) * force
+        self.yv -= sin(dire * pi / 180) * force
+
+    def calc_speed(self, cx, cy, ca):
         # Calculates new speed based off change in height
         # and angle from previous frame
 
@@ -34,10 +49,40 @@ class PaperPlane(ContainerObject, MoveRotate):
         # realistic to change direction really.
         # Although, still need to make sure being straight up is not a strat
         # plane should still be able to fall backwards
+        heading = atan2(self.yv, self.xv)
+        aot = heading - self.angle
+        vel = sqrt(self.xv*self.xv+self.yv*self.yv)
+        area = 0.01
+        fps = 100
 
+        lc = 2 * pi * aot / 180 * pi
+        lf = vel*vel*1.225*area*lc
+        self.move_dir_force(90, lf/fps)
 
+        dc = .0039 * aot * aot + .025
+        ldf = (lf*lf) / (55.125 * area * vel * vel * pi)
+        fd = 0.6125 * area * vel * vel * dc
+        df = ldf + fd
+        self.move_dir_force(180, df/fps)
 
-        pass
+        self.move_dir_force(0, self.mom)
+        self.mom *= 0.99
+        print(self.mom)
+
+        self.xv += self.xgrav
+        self.yv += self.ygrav
+
+    def tick(self):
+        self.rv *= self.rdccl
+        if self.cw:
+            self.rv += self.raccl
+        if self.cc:
+            self.rv -= self.raccl
+        if abs(self.rv) > self.maxrv:
+            self.rv = self.maxrv * ((self.rv > 0) - (self.rv < 0))
+        self.angle += self.rv
+
+        self.apply_velocity()
 
 class Ground(ContainerObject):
     def __init__(self, *args, **kwargs):
@@ -103,14 +148,15 @@ def update_bgitems(g, iset, fname, mi, isp, xo, yo, yro):
         iset.add(grs)
         g.scene.add(grs)
 
-def main():
-    pygame.init()
-    screen = pygame.display.set_mode((960,540), pygame.HWSURFACE | pygame.DOUBLEBUF)
-    g = Game(screen)
+def play_game(g, startmom, startvel):
+    g.scene.children = []
+
     pl = PaperPlane(x=100, y=780,
                     raccl=0.01, maxrv=0.5, rdccl=0.994,
-                    maxv=30, xaccl=3, yaccl=3,
-                    ygrav=0.1)
+                    maxv=20, xaccl=3, yaccl=3)
+    pl.mom = startmom
+    pl.xv = startvel
+    pl.yv = 0
     gr = Ground(y=1080)
     bg = ColorBackground((45, 244, 255), 960, 540)
     g.scene.add(bg)
@@ -140,13 +186,10 @@ def main():
 
     g.ih.bind_key(pygame.K_a, pl.start_counterclock, pl.stop_counterclock)
     g.ih.bind_key(pygame.K_d, pl.start_clockwise, pl.stop_clockwise)
-    #g.ih.bind_key(pygame.K_w, pl.start_move_dir(0), pl.stop_move_dir(0))
+    # bind a key to the "engine"
 
     tx = 100
     ty = 540
-
-    # will adjust speed by changing max_v and [x,y]accl in tandem
-    pl.start_move_dir(0)()
 
     while g.going:
         update_bgitems(g, grass, 'imgs/grass.png', max_grass, gspawn, -25, 865, 20)
@@ -158,11 +201,12 @@ def main():
             update_bgitems(g, stars, 'imgs/star.png', max_stars, sspawn, -25, -x, 200)
         pc = g.cam.to_nonlocal((tx, ty))
         pp = g.scene.to_nonlocal((pl.x, pl.y))
-        g.cam.x += (pp[0]-pc[0])/100
-        g.cam.y += (pp[1]-pc[1])/100
+        g.cam.x += (pp[0] - pc[0])
+        g.cam.y += (pp[1] - pc[1])
 
         oa = pl.angle
         oy = pl.y
+        ox = pl.x
 
         g.tick()
         if g.cam.y > 0:
@@ -172,7 +216,8 @@ def main():
         pl.angle *= pl.rdccl
         na = pl.angle
         ny = pl.y
-        pl.calc_speed(ny-oy, na-oa)
+        nx = pl.x
+        pl.calc_speed(nx - ox, ny - oy, na - oa)
 
         color = tuple([
             (max(g.cam.y, ye) - ys) * (bge[i] - bgs[i]) / (ye - ys) + bgs[i]
@@ -180,7 +225,32 @@ def main():
         ])
         bg.color = color
 
+        if pl.y > 860:
+            g.stop()
+
         g.draw()
+
+    g.going = True
+    # cancel out the other rotation
+    g.ih.unbind_key(pygame.K_a)
+    g.ih.unbind_key(pygame.K_d)
+    pl.xv = 0
+    pl.yv = 0
+
+def main():
+    pygame.init()
+    screen = pygame.display.set_mode((960, 540), pygame.HWSURFACE | pygame.DOUBLEBUF)
+    g = Game(screen)
+
+    for x in range(5):
+
+        play_game(g, 0.01, 10)
+
+        while g.going:
+            g.tick()
+            g.draw()
+
+        g.going = True
 
     pygame.quit()
 

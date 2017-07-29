@@ -22,6 +22,10 @@ class InputHandler:
         if up_action is not None:
             add(self.assoc_up, key, up_action)
 
+    def unbind_key(self, key):
+        self.assoc_up[key] = []
+        self.assoc_down[key] = []
+
     def bind_mouse(self, down_action=None, up_action=None, move_action=None):
         if down_action is not None:
             self.mdown.append(down_action)

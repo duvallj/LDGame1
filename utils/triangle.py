@@ -16,7 +16,9 @@ class Triangle(MoveRotate):
         def nt(point):
             return transform(self.to_nonlocal(point))
         lst = [nt(p) for p in self.vs]
+
         pygame.gfxdraw.filled_polygon(screen, lst, self.color)
+        pygame.gfxdraw.aapolygon(screen, lst, self.color)
 
     def tick(self):
         super(Triangle, self).tick()
@@ -36,13 +38,19 @@ class Triangle(MoveRotate):
     def dot(self, p1, p2):
         return p1[0]*p2[0]+p1[1]*p2[1]
 
-    def collides(self, tri):
-        if not issubclass(tri, Triangle):
+    def collides(self, tri, mt, ot):
+        if not issubclass(Triangle, tri.__class__):
             return False
-        v0 = self.sub(self.v3, self.v1)
-        v1 = self.sub(self.v2, self.v1)
+        nv1 = mt(self.v1)
+        nv2 = mt(self.v2)
+        nv3 = mt(self.v3)
+        v0 = self.sub(nv3, nv1)
+        v1 = self.sub(nv2, nv1)
         for p in tri.vs:
-            v2 = self.sub(p, self.v1)
+            print(self.vs, p)
+            p = ot(p)
+            v2 = self.sub(p, nv1)
+            print([nv1, nv2, nv3], p)
             dot00 = self.dot(v0, v0)
             dot01 = self.dot(v0, v1)
             dot02 = self.dot(v0, v2)
