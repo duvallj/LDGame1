@@ -9,17 +9,21 @@ def main():
     screen = pygame.display.set_mode((640, 480))
     scene = ContainerObject()
     going = True
-    cam = Camera(screen, scene)
+    cam = Camera(screen, scene, xaccl=0.01, yaccl=0.01, maxv=2, xdccl=0.994, ydccl=0.994)
 
     ih = InputHandler()
-    ih.bind_key(pygame.K_UP, cam.start_move_up, cam.stop_move_up)
-    ih.bind_key(pygame.K_DOWN, cam.start_move_down, cam.stop_move_down)
-    ih.bind_key(pygame.K_LEFT, cam.start_move_left, cam.stop_move_left)
-    ih.bind_key(pygame.K_RIGHT, cam.start_move_right, cam.stop_move_right)
+    ih.bind_key(pygame.K_UP, cam.start_move_dir(90), cam.stop_move_dir(90))
+    ih.bind_key(pygame.K_DOWN, cam.start_move_dir(270), cam.stop_move_dir(270))
+    ih.bind_key(pygame.K_LEFT, cam.start_move_dir(180), cam.stop_move_dir(180))
+    ih.bind_key(pygame.K_RIGHT, cam.start_move_dir(0), cam.stop_move_dir(0))
+
+    gt = Triangle((0,0),(200,200),(100,300),2000,100,color=GREEN)
+    ih.bind_key(pygame.K_q, gt.start_counterclock, gt.stop_counterclock)
+    ih.bind_key(pygame.K_e, gt.start_clockwise, gt.stop_clockwise)
 
     scene.add(ColorBackground(BLACK))
-    scene.add(Triangle((0,0),(500,500),(0,500),WHITE,500,0))
-    scene.add(Triangle((0,0),(200,200),(100,300),GREEN,2000,100))
+    scene.add(Triangle((0,0),(500,500),(0,500),500,0,color=WHITE))
+    scene.add(gt)
 
     while going:
         evtlist = pygame.event.get()
@@ -31,7 +35,6 @@ def main():
         scene.tick()
         cam.tick()
         cam.draw(screen)
-
 
 if __name__=='__main__':
     main()
