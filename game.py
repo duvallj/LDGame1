@@ -363,6 +363,7 @@ def play_game(g, td, startmom, startvel):
 def main():
     pygame.init()
     screen = pygame.display.set_mode((960, 540), pygame.HWSURFACE | pygame.DOUBLEBUF)
+    pygame.display.set_caption("Paper Plane Simulator 2007")
     g = Game(screen)
 
     sb = ButtonImage(g.stop, 80, 170, 'imgs/playbutton.png', g.cam)

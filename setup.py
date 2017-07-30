@@ -8,8 +8,18 @@ executables = [cx_Freeze.Executable("game.py")]
 
 cx_Freeze.setup(
     name="Paper Plane Simulator 2007",
-    options={"build_exe": {"packages": ["pygame", "pygame.gfxdraw", "math", "random", "itertools"],
-                           "include_files": ["imgs/cloud1.png", "imgs/cloud2.png", "imgs/grass.png", "imgs/star.png"]}
+    options={"build_exe": {"packages": ["pygame",
+                                        "pygame.gfxdraw",
+                                        "math",
+                                        "random",
+                                        "itertools"],
+                           "include_files": ["imgs/cloud1.png",
+                                             "imgs/cloud2.png",
+                                             "imgs/grass.png",
+                                             "imgs/star.png",
+                                             "imgs/playbutton.png",
+                                             "imgs/retrybutton.png",
+                                             "imgs/pps2k7.png"]}
              },
     executables=executables
 )
